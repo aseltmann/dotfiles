@@ -1,0 +1,5 @@
+name: datalad
+channels:
+  - defaults
+dependencies:
+  - datalad

@@ -1,0 +1,14 @@
+name: feb-neutro
+channels:
+  - defaults
+dependencies:
+  - matplotlib
+  - numpy
+  - pandas
+  - seaborn
+  - conda-forge::pyreadstat
+  - jupyter
+  - itables
+  - openpyxl
+  - bottleneck
+  - pillow

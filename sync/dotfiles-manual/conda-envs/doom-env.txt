@@ -1,0 +1,13 @@
+name: doom
+channels:
+  - defaults
+dependencies:
+  - jupyter
+  - conda-forge::grip
+  - matplotlib
+  - numpy
+  - pandas
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - seaborn

@@ -1,0 +1,13 @@
+name: focus
+channels:
+  - defaults
+dependencies:
+  - conda-forge::lmfit
+  - tifffile
+  - matplotlib
+  - numpy
+  - scipy
+  - pyqt
+  - pip
+  - pip:
+    - focuspoint
