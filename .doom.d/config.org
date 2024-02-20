@@ -1,0 +1,524 @@
+* Startup customization
+I'd like the initial scratch buffer to be in Org:
+
+#+begin_src emacs-lisp
+  (setq initial-major-mode 'org-mode)
+#+end_src
+
+
+Check that =pdf-tools= is installed (otherwise this has to be done manually)
+#+begin_src emacs-lisp
+  (pdf-tools-install)
+#+end_src
+** TODO github issue doom-emacs =doom/quickload-session= hook
+Always resume the last session → currently doesnt work
+
+# #+begin_src emacs-lisp
+#   (add-hook! 'window-setup-hook #'doom/quickload-session)
+# #+end_src
+
+* Custom keybindings
+Switch faster to other window
+
+#+begin_src emacs-lisp
+(global-set-key (kbd "M-o") 'other-window)
+#+end_src
+
+Assume that I always want to kill the current buffer when hitting =C-x k=
+#+BEGIN_SRC emacs-lisp
+  (defun hrs/kill-current-buffer ()
+    "Kill the current buffer without prompting."
+    (interactive)
+    (kill-buffer (current-buffer)))
+
+  (global-set-key (kbd "C-x k") 'hrs/kill-current-buffer)
+#+END_SRC
+
+add toggling the =org-indent-mode= to the toggle localleader
+
+#+begin_src emacs-lisp
+  (map! :leader
+        (:prefix-map ("t" . "toggle")
+         :desc "org-indent-mode"        "C-i"   #'org-indent-mode))
+#+end_src
+
+#+RESULTS:
+: org-indent-mode
+
+- =which-key=, which provides pop-up helpers for keybindings, does not have any
+  default paging keys in evil mode. Let's activate them:
+  #+begin_src emacs-lisp
+    (after! which-key
+      (setq which-key-use-C-h-commands t))
+  #+end_src
+
+* Org-mode
+set the =org-directory=
+#+BEGIN_SRC emacs-lisp
+(setq org-directory "~/org")
+#+END_SRC
+
+I like seeing a little downward-pointing arrow instead of the usual ellipsis
+(=...=) that org displays when there's stuff under a header.
+
+#+begin_src emacs-lisp
+  (setq org-ellipsis "↴")
+#+end_src
+
+
+#+begin_src jupyter-python
+
+#+end_src
+
+* org-babel
+** setup =jupyter=
+most of the setup is done in =init.el= under =:lang (org +jupyter)=.
+Strangely, the doom-emacs default is right now disabling =text/html=, which
+seems way too opinionated. I'm adding it back in (see also
+https://github.com/emacs-jupyter/jupyter/issues/477)
+
+see https://github.com/emacs-jupyter/jupyter/issues/306#issuecomment-1191167288
+julia
+# #+BEGIN_SRC emacs-lisp
+#   (use-package! org
+#     (after! (:and ob-async org-src)
+#     (dolist (lang '(python))
+#       (cl-pushnew (cons (format "jupyter-%s" lang) lang)
+#                   org-src-lang-modes :key #'car))))
+# #+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC emacs-lisp
+  (after! (:and jupyter org)
+    (setq jupyter-org-mime-types '(:text/org :image/svg+xml :image/jpeg
+                                   :image/png :text/html :text/markdown
+                                   :text/latex :text/plain))
+    ;; Set some default header arguments for example.
+    (setq org-babel-default-header-args:sh    '((:results . "verbatim"))
+          org-babel-default-header-args:jupyter-python '((:kernel . "python3")
+                                                         (:session . "/jpy:localhost#8888:a37e524a-8134-4d8f-b24a-367acaf1bdd3")
+                                                         (:pandoc . "t")
+                                                         (:async . "yes")
+                                                         )))
+
+#+END_SRC
+
+#+RESULTS:
+: ((:kernel . python3) (:session . /jpy:localhost#8888:a37e524a-8134-4d8f-b24a-367acaf1bdd3) (:pandoc . t) (:async . yes))
+
+Unfortunately, there is a bug with displaying ansi colors correctly:
+https://github.com/nnicandro/emacs-jupyter/issues/366
+
+The following hook should take care of that:
+
+#+BEGIN_SRC emacs-lisp
+  (defun display-ansi-colors ()
+    (ansi-color-apply-on-region (point-min) (point-max)))
+
+  (add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
+#+END_SRC
+
+#+RESULTS:
+| display-ansi-colors | +org-redisplay-inline-images-in-babel-result-h |
+
+# #+begin_src emacs-lisp
+#   (setq jupyter-use-zmq nil)
+# #+end_src
+
+# #+RESULTS:
+
+** setup =ob-tmux= and helper functions
+
+#+BEGIN_SRC emacs-lisp
+  (use-package ob-tmux
+    ;; Install package automatically (optional)
+    :custom
+    (org-babel-default-header-args:tmux
+     '((:results . "silent")	;
+       (:session . "default")	; The default tmux session to send code to
+       (:socket  . nil)))		; The default tmux socket to communicate with
+    ;; The tmux sessions are prefixed with the following string.
+    ;; You can customize this if you like.
+    (org-babel-tmux-session-prefix "ob-")
+    ;; The terminal that will be used.
+    ;; You can also customize the options passed to the terminal.
+    ;; The default terminal is "gnome-terminal" with options "--".
+    (org-babel-tmux-terminal "xterm")
+    (org-babel-tmux-terminal-opts '("-T" "ob-tmux" "-e"))
+    ;; Finally, if your tmux is not in your $PATH for whatever reason, you
+    ;; may set the path to the tmux binary as follows:
+    (org-babel-tmux-location "/usr/local/bin/tmux"))
+#+END_SRC
+
+I was involved in improving =ob-tmux= by testing the following code. It allows
+to use =org-babel-open-src-block-result= in a special way to print the output
+back to org. For background see [[https://github.com/ahendriksen/ob-tmux/issues/6][this issue]].
+
+#+BEGIN_SRC emacs-lisp
+  (defun ob-tmux--insert-result ()
+    (interactive)
+    (let ((info (org-babel-get-src-block-info 'light)))
+      (when (and info (string-equal "tmux" (nth 0 info)))
+        (let* ((params (nth 2 info))
+               (org-session (cdr (assq :session params)))
+               (socket (cdr (assq :socket params)))
+               (socket (when socket (expand-file-name socket)))
+               (ob-session (ob-tmux--from-org-session org-session socket)))
+          (org-babel-insert-result
+               (ob-tmux--execute-string ob-session
+                                        "capture-pane"
+                                        "-p" ;; print to stdout
+
+                                        "-t" (ob-tmux--session ob-session))
+               '("replace"))))))
+
+  (defun ob-tmux--edit-result ()
+    (interactive)
+    (pcase (org-babel-get-src-block-info 'light)
+      (`(,_ ,_ ,arguments ,_ ,_ ,start ,_)
+       (save-excursion
+         ;; Go to the results, if there aren't any then run the block.
+         (goto-char start)
+         (goto-char (or (org-babel-where-is-src-block-result)
+                        (progn (org-babel-execute-src-block)
+                               (org-babel-where-is-src-block-result))))
+         (end-of-line)
+         (skip-chars-forward " \r\t\n")
+         (org-edit-special)
+         (delete-trailing-whitespace)
+         (end-of-buffer)
+         t))
+      (_ nil)))
+
+  (defun ob-tmux--open-src-block-result (orig-fun &rest args)
+    (let ((info (org-babel-get-src-block-info 'light)))
+      (if (and info (string-equal "tmux" (nth 0 info)))
+          (progn
+            (ob-tmux--insert-result)
+            (ob-tmux--edit-result))
+        (apply orig-fun args))))
+
+  (advice-add 'org-babel-open-src-block-result
+              :around #'ob-tmux--open-src-block-result)
+#+END_SRC
+
+** give org-babel source blocks background colors
+
+They are derived from [[https://github.com/ozh/github-colors/blob/master/colors.json][Github's scholor schemes]] for languages and can be easily
+edited using [[https://htmlcolorcodes.com/color-picker/][this tool]].
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-src-block-faces '(("emacs-lisp" (:background "#482652"))
+                              ("sh" (:background "#223814"))
+                              ("tmux" (:background "#324725"))
+                              ("python" (:background "#142b3e"))
+                              ("jupyter-python" (:background "#371703"))
+                              ))
+#+END_SRC
+
+#+RESULTS:
+| emacs-lisp     | (:background #482652) |
+| sh             | (:background #223814) |
+| tmux           | (:background #324725) |
+| python         | (:background #142b3e) |
+| jupyter-python | (:background #371703) |
+
+** use =rainbow-mode= to colorize color names
+
+Turn it on automatically in most programming modes.
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
+
+#+END_SRC
+
+#+RESULTS:
+| rainbow-identifiers-mode | hl-todo-mode | display-line-numbers-mode | highlight-numbers-mode | vi-tilde-fringe-mode |
+
+* TODO org-export - check if still necessary (it's in =packages.el=)
+I want to add the twitter bootstrap export to the org export dialogue
+
+
+#+begin_src emacs-lisp
+  (use-package! ox-twbs
+    :after ox)
+#+end_src
+
+* org-todo
+
+I want to customize the doom emacs built-in TODO keywords. Specifically, for me
+a =NEXT= state was missing. Also, I want org to log the time for the DONE states
+(here: =DONE= and =KILL=)
+
+#+begin_src emacs-lisp
+  (after! org
+    (setq org-todo-keywords
+          '((sequence
+             "TODO(t)"  ; A task that needs doing & is ready to do
+             "PROJ(p)"  ; A project, which usually contains other tasks
+             "LOOP(r)"  ; A recurring task
+             "STRT(s)"  ; A task that is in progress
+             "NEXT(e)"  ; The next task after the current TODO is done
+             "WAIT(w)"  ; Something external is holding up this task
+             "HOLD(h)"  ; This task is paused/on hold because of me
+             "IDEA(i)"  ; An unconfirmed and unapproved task or notion
+             "|"
+             "DONE(d)"  ; Task successfully completed
+             "KILL(k)") ; Task was cancelled, aborted or is no longer applicable
+            (sequence
+             "[ ](T)"   ; A task that needs doing
+             "[-](S)"   ; Task is in progress
+             "[?](W)"   ; Task is being held up or paused
+             "|"
+             "[X](D)")  ; Task was completed
+            (sequence
+             "|"
+             "OKAY(o)"
+             "YES(y)"
+             "NO(n)")))
+    (setq org-log-done t))
+
+#+end_src
+
+* org-agenda
+
+Customize which files belong in the agenda:
+
+#+begin_src emacs-lisp
+  (setq org-agenda-files
+        (append
+         (directory-files-recursively "~/org/projects/" ".org$")
+         '("~org/index.org"
+           "~org/recurring-events.org")))
+#+end_src
+
+#+RESULTS:
+| ~/org/projects/eggeling.org | ~/org/projects/life.org | ~/org/projects/medinetz-jena.org | ~/org/projects/rls-kritmint.org | ~org/index.org | ~org/recurring-events.org |
+
+* org-journal
+
+I want a monthly journal and a custom journal directory.
+For infos on the time string format:
+http://doc.endlessparentheses.com/Fun/format-time-stringhttp://doc.endlessparentheses.com/Fun/format-time-string
+
+#+begin_src emacs-lisp
+  (after! org-journal
+    (setq org-journal-dir "~/org/journal/")
+    (setq org-journal-file-type `monthly)
+    (setq org-journal-date-format "%A, %d %B %Y"))
+#+end_src
+
+* org-clock
+I want the total time in the duration variable be given in hours and minutes
+(not days and hours)
+#+begin_src emacs-lisp
+(setq org-duration-format 'h:mm)
+#+end_src
+* Zetteldeft
+#+begin_src emacs-lisp :results silent
+(after! deft
+  (setq deft-default-extension "org")
+  (setq deft-extensions '("org" "md" "txt"))
+  (setq deft-use-filename-as-title t)
+  (setq deft-directory "~/org/00_zd")
+  (setq deft-auto-save-interval 60)
+  )
+#+end_src
+
+Firstly, deft works only inside a =deft-dir=, which is set above. then start deft.
+
+A Zettelkasten system has no fixed single hierarchy, but it is often convenient
+to maintain a base or home note.
+Such a note provides structure: it can link to other notes, which in turn
+gathers links to notes on a specific theme.
+
+In any case, moving to the home note should be easy, which is where
+=zetteldeft-go-home= comes in, accessible with =C-c d h=.
+
+For this to work, you need to first store a note ID in =zetteldeft-home-id=.
+For this knowledge base, we could do the following:
+
+#+begin_src emacs-lisp
+(defun zetteldeft-go-home ()
+  "Move to a designated home note.
+Set `zetteldeft-home-id' to an ID string of your home note."
+  (interactive)
+  (if (stringp zetteldeft-home-id)
+      (zetteldeft-find-file
+        (zetteldeft--id-to-full-path zetteldeft-home-id))
+    (message "No home set. Provide a string to zetteldeft-home-id.")))
+
+(after! zetteldeft
+  (setq zetteldeft-home-id "2021-11-30-2245")
+  )
+
+(setq zetteldeft-home-id "2021-11-30-2245")
+#+end_src
+
+If you have large sets of notes, =deft-refresh= can take a while.
+One way to speed things up is to temporarily increase Emacs' garbage collection threshold.
+
+#+begin_src emacs-lisp
+;(defun zd-dir-big ()
+;  (interactive)
+;  (let ((gc-cons-threshold most-positive-fixnum))
+;    (deft)
+;    (setq deft-directory "~/zd-big/")
+;    (deft-refresh)))
+#+end_src
+
+Now add some keybindings:
+
+#+begin_src emacs-lisp
+(map! :map zetteldeft-map
+      :leader
+      (:prefix ("d" . "zettel")
+                :desc "deft"            :nvme "d" #'deft
+                :desc "new search"      :nvme "D" #'zetteldeft-deft-new-search
+                :desc "refresh"         :nvme "R" #'deft-refresh
+                :desc "search at point" :nvme "s" #'zetteldeft-search-at-point
+                :desc "search current id" :nvme "c" #'zetteldeft-search-current-id
+                :desc "follow link"     :nvme "f" #'zetteldeft-follow-link
+                :desc "avy file other window" :nvme "F" #'zetteldeft-avy-file-search-ace-window
+                :desc "browse"          :nvme "." #'zetteldeft-browse
+                :desc "go home"         :nvme "h" #'zetteldeft-go-home
+                :desc "avy link search" :nvme "l" #'zetteldeft-avy-link-search
+                :desc "insert list of links" :nvme "L" #'zetteldeft-insert-list-links-block
+                :desc "avy tag search"  :nvme "t" #'zetteldeft-avy-tag-search
+                :desc "tag list"        :nvme "T" #'zetteldeft-tag-buffer
+                :desc "insert tag"      :nvme "#" #'zetteldeft-tag-insert
+                :desc "remove tag"      :nvme "$" #'zetteldeft-tag-remove
+                :desc "search tag"      :nvme "/" #'zetteldeft-search-tag
+                :desc "insert id"       :nvme "i" #'zetteldeft-find-file-id-insert
+                :desc "insert id full search" :nvme "C-i" #'zetteldeft-full-search-id-insert
+                :desc "insert full title" :nvme "I" #'zetteldeft-find-file-full-title-insert
+                :desc "insert title full search" :nvme "C-I" #'zetteldeft-full-search-full-title-insert
+                :desc "find file"       :nvme "o" #'zetteldeft-find-file
+                :desc "new file"        :nvme "n" #'zetteldeft-new-file
+                :desc "new file & link" :nvme "N" #'zetteldeft-new-file-and-link
+                :desc "new file & backlink" :nvme "B" #'zetteldeft-new-file-and-backlink
+                :desc "add backlink"    :nvme "b" #'zetteldeft-backlink-add
+                :desc "rename"          :nvme "r" #'zetteldeft-file-rename
+                :desc "count words"     :nvme "x" #'zetteldeft-count-words
+                )
+      )
+
+#+end_src
+
+* Optimize citations with =zotxt-emacs= and Zotero integration
+zotxt-emacs works with zotxt to provide Emacs integration with Zotero, allowing
+you to manage citation keys for pandoc markdown documents as well as org mode
+links to items in your Zotero collection.
+
+Note: on Github this project is called https://github.com/egh/zotxt-emacs and
+shouldn't be confused with the zotero extension with the same name which this
+emacs mode is using (https://github.com/egh/zotxt)
+
+To insert a link to a reference into a org-mode document, first enable the
+=org-zotxt= minor mode. To insert citation keys into a markdown document (for
+use with =pandoc=), first enable =zotxt-citekey= minor mode (see =** Editing
+with Markdown=)
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'org-mode-hook #'org-zotxt-mode)
+  (add-hook 'org-mode-hook #'org-zotxt-mode)
+
+#+END_SRC
+
+Now add some keybindings:
+
+#+begin_src emacs-lisp
+(map! :map zotxt-map
+      :leader
+      (:prefix ("z" . "zotero")
+                :desc "org insert item"         :nvme "i" #'org-zotxt-insert-reference-link
+                :desc "org update link here"    :nvme "u" #'org-zotxt-update-reference-link-at-point
+                :desc "org update all links"    :nvme "U" #'org-zotxt-update-all-reference-links
+                :desc "org open attachment"     :nvme "a" #'org-zotxt-open-attachment
+                :desc "insert citekey"          :nvme "k" #'zotxt-citekey-insert
+                :desc "select citekey in Zotero" :nvme "s" #'zotxt-citekey-select-item-at-point
+                )
+      )
+
+#+end_src
+
+
+for org-mode:
+- Then you can use: =C-c " i= (=org-zotxt-insert-reference-link=) to insert an
+  item.
+- To update the current link text at point to reflect changed metadata from
+  Zotero, use =C-c " u= (=org-zotxt-update-reference-link-at-point=).
+- To open an attachment of the link at point, use =C-c " a=
+  (=org-zotxt-open-attachment=)
+
+  for markdown:
+  - Then you can use: =C-c " k= (=zotxt-citekey-insert=) to insert a citation
+    key.
+  - You can also use =complete-at-point= to complete the citekey. For example, if
+    you type =@doe= =M-x completion-at-point=, you will be presented with a list of
+    completions. In =markdown-mode= this is not bound to any key sequence, but
+    you can of course bind it as you would like.
+  - See zotxt website for instructions on using =pandoc-zotxt.lua= to
+    automatically connect to a running Zotero instance to fetch citation data
+    when using pandoc.
+
+Lastly, we want the inserted links with the form
+=zotero://select/library/items/ZJGPX6KU= to open with Zotero
+
+#+begin_src emacs-lisp
+  (defun zotero-open (zotero-link)
+    (start-process "zotero_open" nil "open" (concat "zotero:" zotero-link)))
+
+  (org-link-set-parameters "zotero" :follow #'zotero-open)
+#+end_src
+
+* fine-tuning =init.el= - rainbow mode
+
+first, use rainbow mode in org-mode
+
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook 'rainbow-mode)
+#+end_src
+
+=hl-line-mode= overrides the color highlighting of =rainbow-mode=, limiting the
+use of that plugin and on-site color changes using =kurecolor=. To automatically
+disable it only when =rainbow-mode= is active, you can add the following hook:
+
+#+begin_src emacs-lisp
+
+(add-hook! 'rainbow-mode-hook
+  (hl-line-mode (if rainbow-mode -1 +1)))
+#+end_src
+* Wrap paragraphs automatically and keep bold lines on line breaks
+
+=AutoFillMode= automatically wraps paragraphs, kinda like hitting =M-q=. I wrap
+a lot of paragraphs, so this automatically wraps 'em when I'm writing text,
+Markdown, or Org.
+
+#+begin_src emacs-lisp
+  (add-hook 'text-mode-hook 'auto-fill-mode)
+  (add-hook 'gfm-mode-hook 'auto-fill-mode)
+  (add-hook 'org-mode-hook 'auto-fill-mode)
+#+end_src
+
+The preset in org-mode is to only allow 1 line. This is not enough ;)
+
+#+BEGIN_SRC emacs-lisp
+  (with-eval-after-load 'org
+  ;; Allow multiple line Org emphasis markup.
+  ;; http://emacs.stackexchange.com/a/13828/115
+  (setcar (nthcdr 4 org-emphasis-regexp-components) 20) ;Up to 20 lines, default is just 1
+  ;; Below is needed to apply the modified `org-emphasis-regexp-components'
+  ;; settings from above.
+  (org-set-emph-re 'org-emphasis-regexp-components org-emphasis-regexp-components))
+#+END_SRC
+
+* Add wordcount to modeline
+
+#+begin_src emacs-lisp
+(setq doom-modeline-enable-word-count t)
+#+end_src
+
+#+RESULTS:
+: t
