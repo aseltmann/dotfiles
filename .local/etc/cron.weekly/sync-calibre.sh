@@ -30,6 +30,7 @@ REMOTE_PATH="rclone/calibre"
 db_export ()
 {
     rclone copy --verbose "$LOCAL_PATH" "$DRIVE_NAME:$REMOTE_PATH"
+    rclone touch "$LOCAL_PATH/RCLONE_TIMESTAMP"
     rclone copyto \
         --ignore-times \
         "$LOCAL_PATH/RCLONE_TIMESTAMP" \
@@ -41,6 +42,7 @@ db_export ()
 db_import ()
 {
     rclone copy --verbose "$DRIVE_NAME:$REMOTE_PATH" "$LOCAL_PATH"
+    rclone touch "$LOCAL_PATH/RCLONE_TIMESTAMP"
     rclone copyto \
         --ignore-times \
         "$LOCAL_PATH/RCLONE_TIMESTAMP" \
@@ -142,4 +144,4 @@ sync_calibre ()
     fi
 }
 
-sync_calibre
+sync_calibre >> "$HOME/sync/rclone/sync-calibre-cron.log" 2>&1
