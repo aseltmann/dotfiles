@@ -19,20 +19,34 @@ REMOTE_PATH="rclone/zotero"
 #####################
 
 # import and export commands
+# to check if the local db is up to date, we need to check three files
+# - local zotero.sqlite: mtime changed with every change in the zotero db
+# - remote RCLONE_TIMESTAMP: rclone touch does not work with the mega remote
+#   (failed to touch: can't modified time) → can't update mtime on remote
+#   zotero.sqlite directly → have to use RCLONE_TIMESTAMP as a proxy file
+# - local RCLONE_TIMESTAMP: only used to update remote RCLONE_TIMESTAMP
+#   (rclone copyto --ignore-times imitates rclone touch in this case)
+
 db_export ()
 {
-    rclone copy "$LOCAL_PATH" "$DRIVE_NAME:$REMOTE_PATH"
+    rclone copy --verbose "$LOCAL_PATH" "$DRIVE_NAME:$REMOTE_PATH"
     rclone copyto \
         --ignore-times \
         "$LOCAL_PATH/RCLONE_TIMESTAMP" \
         "$DRIVE_NAME:$REMOTE_PATH/RCLONE_TIMESTAMP"
     rclone touch "$LOCAL_PATH/RCLONE_TIMESTAMP"
+    rclone touch "$LOCAL_PATH/zotero.sqlite"
 }
 
 db_import ()
 {
-    rclone copy "$DRIVE_NAME:$REMOTE_PATH" "$LOCAL_PATH"
+    rclone copy --verbose "$DRIVE_NAME:$REMOTE_PATH" "$LOCAL_PATH"
+    rclone copyto \
+        --ignore-times \
+        "$LOCAL_PATH/RCLONE_TIMESTAMP" \
+        "$DRIVE_NAME:$REMOTE_PATH/RCLONE_TIMESTAMP"
     rclone touch "$LOCAL_PATH/RCLONE_TIMESTAMP"
+    rclone touch "$LOCAL_PATH/zotero.sqlite"
 }
 
 format_datetime_from_string ()
@@ -74,6 +88,8 @@ get_remote_db_mtime ()
 
 sync_zotero ()
 {
+    # first, display the time
+    printf "%s - Starting Zotero sync...\n" "$(date -u)"
     # if there is no local yet
     human_readable_local_mtime="$(get_local_db_mtime)"
     if [ -z "$human_readable_local_mtime" ]; then
@@ -95,7 +111,7 @@ sync_zotero ()
     fi
 
     # Printing modification times to the user
-    printf "Local zotero folder modification time:\t%s\n" "$human_readable_local_mtime"
+    printf "Local zotero folder modification time:\t\t%s\n" "$human_readable_local_mtime"
     printf "Remote zotero folder modification time:\t%s\n" "$human_readable_remote_mtime"
 
     # The conversion is required for the comparison in the following if statement
