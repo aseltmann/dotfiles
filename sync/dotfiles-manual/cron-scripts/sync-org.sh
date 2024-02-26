@@ -17,10 +17,12 @@ LOG_FILE="$HOME/sync/rclone/bisync.log"
 
 sync_org ()
 {
-    echo "Synching org folder..."
+    printf "%s - Starting Org sync...\n" "$(date -u)" \
+        >> "$LOG_FILE"
     rclone bisync "$LOCAL_PATH" "$DRIVE_NAME":"$REMOTE_PATH" \
         --check-access \
         --filters-file "$FILTERS_FILE" \
+        --verbose \
         >> "$LOG_FILE" 2>&1
 }
 
