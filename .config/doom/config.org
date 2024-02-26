@@ -10,6 +10,17 @@ Check that =pdf-tools= is installed (otherwise this has to be done manually)
 #+begin_src emacs-lisp
   (pdf-tools-install)
 #+end_src
+** KILL remove $HOME .git from =projectile=
+CLOSED: [2024-02-24 Sa 14:55]
+# Emacs will assume $HOME is the root of any project living under $HOME. If this
+# isn't desired, you will need to remove ".git" from
+# `projectile-project-root-files-bottom-up' (a variable), e.g.
+# #+begin_src emacs-lisp
+# (after! projectile
+#   (setq projectile-project-root-files-bottom-up
+#         (remove ".git" projectile-project-root-files-bottom-up)))
+# #+end_src
+
 ** TODO github issue doom-emacs =doom/quickload-session= hook
 Always resume the last session → currently doesnt work
 
