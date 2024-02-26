@@ -74,6 +74,8 @@ get_remote_passwords_mtime ()
 
 sync_passwords ()
 {
+    # first, display the time
+    printf "%s - Starting KeepassXC sync...\n" "$(date -u)"
     # if there is no local yet
     human_readable_local_mtime="$(get_local_passwords_mtime)"
     if [ -z "$human_readable_local_mtime" ]; then
@@ -95,7 +97,7 @@ sync_passwords ()
     fi
 
     # Printing modification times to the user
-    printf "Local passwords file modification time:\t\t%s\n" "$human_readable_local_mtime"
+    printf "Local passwords file modification time:\t%s\n" "$human_readable_local_mtime"
     printf "Remote passwords file modification time:\t%s\n" "$human_readable_remote_mtime"
 
     # The conversion is required for the comparison in the following if statement
