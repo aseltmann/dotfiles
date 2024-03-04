@@ -116,7 +116,6 @@ julia
 #+END_SRC
 
 #+RESULTS:
-: ((:kernel . python3) (:session . /jpy:localhost#8888:a37e524a-8134-4d8f-b24a-367acaf1bdd3) (:pandoc . t) (:async . yes))
 
 Unfortunately, there is a bug with displaying ansi colors correctly:
 https://github.com/nnicandro/emacs-jupyter/issues/366
@@ -247,6 +246,17 @@ Turn it on automatically in most programming modes.
 #+RESULTS:
 | rainbow-identifiers-mode | hl-todo-mode | display-line-numbers-mode | highlight-numbers-mode | vi-tilde-fringe-mode |
 
+* dap-mode and dab-python (debugger)
+- Documentation for dap-python:
+  - [[https://github.com/microsoft/debugpy/][adapter]]
+  - [[https://emacs-lsp.github.io/dap-mode/page/configuration/#python][dap-mode configuration]]
+
+By default, DAP expects [[https://github.com/Microsoft/ptvsd][ptvsd]] as the Python debugger, but [[https://github.com/microsoft/debugpy][debugpy]] is
+recommended. See [[*Configuration][Configuration]].
+#+begin_src emacs-lisp
+(after! dap-mode
+  (setq dap-python-debugger 'debugpy))
+#+end_src
 * TODO org-export - check if still necessary (it's in =packages.el=)
 I want to add the twitter bootstrap export to the org export dialogue
 

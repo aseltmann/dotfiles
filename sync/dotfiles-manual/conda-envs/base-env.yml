@@ -8,3 +8,5 @@ dependencies:
   - black
   - pipenv
   - pyflakes
+  - conda-forge::ptvsd  # debugger
+  - conda-forge::debugpy  # debugger

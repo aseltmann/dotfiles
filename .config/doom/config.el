@@ -115,6 +115,9 @@
 
 (add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
 
+(after! dap-mode
+  (setq dap-python-debugger 'debugpy))
+
 (use-package! ox-twbs
   :after ox)
 
