@@ -6,9 +6,11 @@ dependencies:
   - numpy
   - pandas
   - seaborn
-  - conda-forge::pyreadstat
   - jupyter
   - itables
-  - openpyxl
   - bottleneck
   - pillow
+  - conda-forge::pyreadstat
+  - conda-forge::openpyxl  # for pandas reading excel (and >3.1)
+  - conda-forge::pyarrow   # for pandas feather/parquet export
+  - conda-forge::pytables  # for pandas HDF export

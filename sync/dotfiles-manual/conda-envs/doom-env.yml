@@ -3,7 +3,17 @@ channels:
   - defaults
 dependencies:
   - jupyter
+  - nb_conda_kernels  # only needed if jupyter is started from this environment
+  # , it detects kernels from other envs
   - conda-forge::grip
+  - conda-forge::black
+  - conda-forge::pyflakes
+  - conda-forge::isort
+  - conda-forge::pipenv
+  - conda-forge::nose
+  - conda-forge::pytest
+  - conda-forge::cython
+  - conda-forge::r-languageserver
   - matplotlib
   - numpy
   - pandas
