@@ -1,0 +1,8 @@
+name: r-base
+channels:
+  - defaults
+dependencies:
+  - r::r-irkernel
+  - r::r-base
+  - r::r-essentials
+  - r::r-tidyverse
