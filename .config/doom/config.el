@@ -2,124 +2,25 @@
 
 (pdf-tools-install)
 
-(global-set-key (kbd "M-o") 'other-window)
-
-(defun hrs/kill-current-buffer ()
-  "Kill the current buffer without prompting."
-  (interactive)
-  (kill-buffer (current-buffer)))
-
-(global-set-key (kbd "C-x k") 'hrs/kill-current-buffer)
-
 (map! :leader
       (:prefix-map ("t" . "toggle")
        :desc "org-indent-mode"        "C-i"   #'org-indent-mode))
 
-(after! which-key
-  (setq which-key-use-C-h-commands t))
-
 (setq org-directory "~/org")
 
-(setq org-ellipsis "↴")
-
-
-
-(after! (:and jupyter org)
-  (setq jupyter-org-mime-types '(:text/org :image/svg+xml :image/jpeg
-                                 :image/png :text/html :text/markdown
-                                 :text/latex :text/plain))
-  ;; Set some default header arguments for example.
-  (setq org-babel-default-header-args:sh    '((:results . "verbatim"))
-        org-babel-default-header-args:jupyter-python '((:kernel . "python3")
-                                                       (:session . "/jpy:localhost#8888:a37e524a-8134-4d8f-b24a-367acaf1bdd3")
-                                                       (:pandoc . "t")
-                                                       (:async . "yes")
-                                                       )))
-
-(defun display-ansi-colors ()
-  (ansi-color-apply-on-region (point-min) (point-max)))
-
-(add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
-
-(use-package ob-tmux
-  ;; Install package automatically (optional)
-  :custom
-  (org-babel-default-header-args:tmux
-   '((:results . "silent")	;
-     (:session . "default")	; The default tmux session to send code to
-     (:socket  . nil)))		; The default tmux socket to communicate with
-  ;; The tmux sessions are prefixed with the following string.
-  ;; You can customize this if you like.
-  (org-babel-tmux-session-prefix "ob-")
-  ;; The terminal that will be used.
-  ;; You can also customize the options passed to the terminal.
-  ;; The default terminal is "gnome-terminal" with options "--".
-  (org-babel-tmux-terminal "xterm")
-  (org-babel-tmux-terminal-opts '("-T" "ob-tmux" "-e"))
-  ;; Finally, if your tmux is not in your $PATH for whatever reason, you
-  ;; may set the path to the tmux binary as follows:
-  (org-babel-tmux-location "/usr/local/bin/tmux"))
-
-(defun ob-tmux--insert-result ()
-  (interactive)
-  (let ((info (org-babel-get-src-block-info 'light)))
-    (when (and info (string-equal "tmux" (nth 0 info)))
-      (let* ((params (nth 2 info))
-             (org-session (cdr (assq :session params)))
-             (socket (cdr (assq :socket params)))
-             (socket (when socket (expand-file-name socket)))
-             (ob-session (ob-tmux--from-org-session org-session socket)))
-        (org-babel-insert-result
-             (ob-tmux--execute-string ob-session
-                                      "capture-pane"
-                                      "-p" ;; print to stdout
-
-                                      "-t" (ob-tmux--session ob-session))
-             '("replace"))))))
-
-(defun ob-tmux--edit-result ()
-  (interactive)
-  (pcase (org-babel-get-src-block-info 'light)
-    (`(,_ ,_ ,arguments ,_ ,_ ,start ,_)
-     (save-excursion
-       ;; Go to the results, if there aren't any then run the block.
-       (goto-char start)
-       (goto-char (or (org-babel-where-is-src-block-result)
-                      (progn (org-babel-execute-src-block)
-                             (org-babel-where-is-src-block-result))))
-       (end-of-line)
-       (skip-chars-forward " \r\t\n")
-       (org-edit-special)
-       (delete-trailing-whitespace)
-       (end-of-buffer)
-       t))
-    (_ nil)))
-
-(defun ob-tmux--open-src-block-result (orig-fun &rest args)
-  (let ((info (org-babel-get-src-block-info 'light)))
-    (if (and info (string-equal "tmux" (nth 0 info)))
-        (progn
-          (ob-tmux--insert-result)
-          (ob-tmux--edit-result))
-      (apply orig-fun args))))
-
-(advice-add 'org-babel-open-src-block-result
-            :around #'ob-tmux--open-src-block-result)
+(after! org
+  (setq org-ellipsis "↴"))
 
 (setq org-src-block-faces '(("emacs-lisp" (:background "#482652"))
                             ("sh" (:background "#223814"))
                             ("tmux" (:background "#324725"))
                             ("python" (:background "#142b3e"))
                             ("jupyter-python" (:background "#371703"))
+                            ;; ("jupyter-python" (:background "#FFFFFF"))
                             ))
-
-(add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
 
 (after! dap-mode
   (setq dap-python-debugger 'debugpy))
-
-(use-package! ox-twbs
-  :after ox)
 
 (after! org
   (setq org-todo-keywords
@@ -159,7 +60,8 @@
   (setq org-journal-file-type `monthly)
   (setq org-journal-date-format "%A, %d %B %Y"))
 
-(setq org-duration-format 'h:mm)
+(after! org
+  (setq org-duration-format 'h:mm))
 
 (after! deft
   (setq deft-default-extension "org")
@@ -242,7 +144,8 @@ Set `zetteldeft-home-id' to an ID string of your home note."
 (defun zotero-open (zotero-link)
   (start-process "zotero_open" nil "open" (concat "zotero:" zotero-link)))
 
-(org-link-set-parameters "zotero" :follow #'zotero-open)
+(after! ol
+  (org-link-set-parameters "zotero" :follow #'zotero-open))
 
 (add-hook 'org-mode-hook 'rainbow-mode)
 

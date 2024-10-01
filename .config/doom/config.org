@@ -1,4 +1,4 @@
-* Startup customization
+* Startup customizatio
 I'd like the initial scratch buffer to be in Org:
 
 #+begin_src emacs-lisp
@@ -30,21 +30,6 @@ Always resume the last session → currently doesnt work
 
 * Custom keybindings
 Switch faster to other window
-
-#+begin_src emacs-lisp
-(global-set-key (kbd "M-o") 'other-window)
-#+end_src
-
-Assume that I always want to kill the current buffer when hitting =C-x k=
-#+BEGIN_SRC emacs-lisp
-  (defun hrs/kill-current-buffer ()
-    "Kill the current buffer without prompting."
-    (interactive)
-    (kill-buffer (current-buffer)))
-
-  (global-set-key (kbd "C-x k") 'hrs/kill-current-buffer)
-#+END_SRC
-
 add toggling the =org-indent-mode= to the toggle localleader
 
 #+begin_src emacs-lisp
@@ -52,16 +37,6 @@ add toggling the =org-indent-mode= to the toggle localleader
         (:prefix-map ("t" . "toggle")
          :desc "org-indent-mode"        "C-i"   #'org-indent-mode))
 #+end_src
-
-#+RESULTS:
-: org-indent-mode
-
-- =which-key=, which provides pop-up helpers for keybindings, does not have any
-  default paging keys in evil mode. Let's activate them:
-  #+begin_src emacs-lisp
-    (after! which-key
-      (setq which-key-use-C-h-commands t))
-  #+end_src
 
 * Org-mode
 set the =org-directory=
@@ -73,145 +48,85 @@ I like seeing a little downward-pointing arrow instead of the usual ellipsis
 (=...=) that org displays when there's stuff under a header.
 
 #+begin_src emacs-lisp
-  (setq org-ellipsis "↴")
-#+end_src
-
-
-#+begin_src jupyter-python
-
+(after! org
+  (setq org-ellipsis "↴"))
 #+end_src
 
 * org-babel
-** setup =jupyter=
-most of the setup is done in =init.el= under =:lang (org +jupyter)=.
-Strangely, the doom-emacs default is right now disabling =text/html=, which
-seems way too opinionated. I'm adding it back in (see also
-https://github.com/emacs-jupyter/jupyter/issues/477)
+** WAIT setup =ob-tmux= and helper functions
 
-see https://github.com/emacs-jupyter/jupyter/issues/306#issuecomment-1191167288
-julia
 # #+BEGIN_SRC emacs-lisp
-#   (use-package! org
-#     (after! (:and ob-async org-src)
-#     (dolist (lang '(python))
-#       (cl-pushnew (cons (format "jupyter-%s" lang) lang)
-#                   org-src-lang-modes :key #'car))))
+#   (use-package ob-tmux
+#     ;; Install package automatically (optional)
+#     :custom
+#     (org-babel-default-header-args:tmux
+#      '((:results . "silent")	;
+#        (:session . "default")	; The default tmux session to send code to
+#        (:socket  . nil)))		; The default tmux socket to communicate with
+#     ;; The tmux sessions are prefixed with the following string.
+#     ;; You can customize this if you like.
+#     (org-babel-tmux-session-prefix "ob-")
+#     ;; The terminal that will be used.
+#     ;; You can also customize the options passed to the terminal.
+#     ;; The default terminal is "gnome-terminal" with options "--".
+#     (org-babel-tmux-terminal "xterm")
+#     (org-babel-tmux-terminal-opts '("-T" "ob-tmux" "-e"))
+#     ;; Finally, if your tmux is not in your $PATH for whatever reason, you
+#     ;; may set the path to the tmux binary as follows:
+#     (org-babel-tmux-location "/usr/local/bin/tmux"))
 # #+END_SRC
 
-#+RESULTS:
+# I was involved in improving =ob-tmux= by testing the following code. It allows
+# to use =org-babel-open-src-block-result= in a special way to print the output
+# back to org. For background see [[https://github.com/ahendriksen/ob-tmux/issues/6][this issue]].
 
-#+BEGIN_SRC emacs-lisp
-  (after! (:and jupyter org)
-    (setq jupyter-org-mime-types '(:text/org :image/svg+xml :image/jpeg
-                                   :image/png :text/html :text/markdown
-                                   :text/latex :text/plain))
-    ;; Set some default header arguments for example.
-    (setq org-babel-default-header-args:sh    '((:results . "verbatim"))
-          org-babel-default-header-args:jupyter-python '((:kernel . "python3")
-                                                         (:session . "/jpy:localhost#8888:a37e524a-8134-4d8f-b24a-367acaf1bdd3")
-                                                         (:pandoc . "t")
-                                                         (:async . "yes")
-                                                         )))
+# #+BEGIN_SRC emacs-lisp
+#   (defun ob-tmux--insert-result ()
+#     (interactive)
+#     (let ((info (org-babel-get-src-block-info 'light)))
+#       (when (and info (string-equal "tmux" (nth 0 info)))
+#         (let* ((params (nth 2 info))
+#                (org-session (cdr (assq :session params)))
+#                (socket (cdr (assq :socket params)))
+#                (socket (when socket (expand-file-name socket)))
+#                (ob-session (ob-tmux--from-org-session org-session socket)))
+#           (org-babel-insert-result
+#                (ob-tmux--execute-string ob-session
+#                                         "capture-pane"
+#                                         "-p" ;; print to stdout
 
-#+END_SRC
+#                                         "-t" (ob-tmux--session ob-session))
+#                '("replace"))))))
 
-#+RESULTS:
+#   (defun ob-tmux--edit-result ()
+#     (interactive)
+#     (pcase (org-babel-get-src-block-info 'light)
+#       (`(,_ ,_ ,arguments ,_ ,_ ,start ,_)
+#        (save-excursion
+#          ;; Go to the results, if there aren't any then run the block.
+#          (goto-char start)
+#          (goto-char (or (org-babel-where-is-src-block-result)
+#                         (progn (org-babel-execute-src-block)
+#                                (org-babel-where-is-src-block-result))))
+#          (end-of-line)
+#          (skip-chars-forward " \r\t\n")
+#          (org-edit-special)
+#          (delete-trailing-whitespace)
+#          (end-of-buffer)
+#          t))
+#       (_ nil)))
 
-Unfortunately, there is a bug with displaying ansi colors correctly:
-https://github.com/nnicandro/emacs-jupyter/issues/366
+#   (defun ob-tmux--open-src-block-result (orig-fun &rest args)
+#     (let ((info (org-babel-get-src-block-info 'light)))
+#       (if (and info (string-equal "tmux" (nth 0 info)))
+#           (progn
+#             (ob-tmux--insert-result)
+#             (ob-tmux--edit-result))
+#         (apply orig-fun args))))
 
-The following hook should take care of that:
-
-#+BEGIN_SRC emacs-lisp
-  (defun display-ansi-colors ()
-    (ansi-color-apply-on-region (point-min) (point-max)))
-
-  (add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
-#+END_SRC
-
-#+RESULTS:
-| display-ansi-colors | +org-redisplay-inline-images-in-babel-result-h |
-
-# #+begin_src emacs-lisp
-#   (setq jupyter-use-zmq nil)
-# #+end_src
-
-# #+RESULTS:
-
-** setup =ob-tmux= and helper functions
-
-#+BEGIN_SRC emacs-lisp
-  (use-package ob-tmux
-    ;; Install package automatically (optional)
-    :custom
-    (org-babel-default-header-args:tmux
-     '((:results . "silent")	;
-       (:session . "default")	; The default tmux session to send code to
-       (:socket  . nil)))		; The default tmux socket to communicate with
-    ;; The tmux sessions are prefixed with the following string.
-    ;; You can customize this if you like.
-    (org-babel-tmux-session-prefix "ob-")
-    ;; The terminal that will be used.
-    ;; You can also customize the options passed to the terminal.
-    ;; The default terminal is "gnome-terminal" with options "--".
-    (org-babel-tmux-terminal "xterm")
-    (org-babel-tmux-terminal-opts '("-T" "ob-tmux" "-e"))
-    ;; Finally, if your tmux is not in your $PATH for whatever reason, you
-    ;; may set the path to the tmux binary as follows:
-    (org-babel-tmux-location "/usr/local/bin/tmux"))
-#+END_SRC
-
-I was involved in improving =ob-tmux= by testing the following code. It allows
-to use =org-babel-open-src-block-result= in a special way to print the output
-back to org. For background see [[https://github.com/ahendriksen/ob-tmux/issues/6][this issue]].
-
-#+BEGIN_SRC emacs-lisp
-  (defun ob-tmux--insert-result ()
-    (interactive)
-    (let ((info (org-babel-get-src-block-info 'light)))
-      (when (and info (string-equal "tmux" (nth 0 info)))
-        (let* ((params (nth 2 info))
-               (org-session (cdr (assq :session params)))
-               (socket (cdr (assq :socket params)))
-               (socket (when socket (expand-file-name socket)))
-               (ob-session (ob-tmux--from-org-session org-session socket)))
-          (org-babel-insert-result
-               (ob-tmux--execute-string ob-session
-                                        "capture-pane"
-                                        "-p" ;; print to stdout
-
-                                        "-t" (ob-tmux--session ob-session))
-               '("replace"))))))
-
-  (defun ob-tmux--edit-result ()
-    (interactive)
-    (pcase (org-babel-get-src-block-info 'light)
-      (`(,_ ,_ ,arguments ,_ ,_ ,start ,_)
-       (save-excursion
-         ;; Go to the results, if there aren't any then run the block.
-         (goto-char start)
-         (goto-char (or (org-babel-where-is-src-block-result)
-                        (progn (org-babel-execute-src-block)
-                               (org-babel-where-is-src-block-result))))
-         (end-of-line)
-         (skip-chars-forward " \r\t\n")
-         (org-edit-special)
-         (delete-trailing-whitespace)
-         (end-of-buffer)
-         t))
-      (_ nil)))
-
-  (defun ob-tmux--open-src-block-result (orig-fun &rest args)
-    (let ((info (org-babel-get-src-block-info 'light)))
-      (if (and info (string-equal "tmux" (nth 0 info)))
-          (progn
-            (ob-tmux--insert-result)
-            (ob-tmux--edit-result))
-        (apply orig-fun args))))
-
-  (advice-add 'org-babel-open-src-block-result
-              :around #'ob-tmux--open-src-block-result)
-#+END_SRC
+#   (advice-add 'org-babel-open-src-block-result
+#               :around #'ob-tmux--open-src-block-result)
+# #+END_SRC
 
 ** give org-babel source blocks background colors
 
@@ -224,6 +139,7 @@ edited using [[https://htmlcolorcodes.com/color-picker/][this tool]].
                               ("tmux" (:background "#324725"))
                               ("python" (:background "#142b3e"))
                               ("jupyter-python" (:background "#371703"))
+                              ;; ("jupyter-python" (:background "#FFFFFF"))
                               ))
 #+END_SRC
 
@@ -233,18 +149,18 @@ edited using [[https://htmlcolorcodes.com/color-picker/][this tool]].
 | tmux           | (:background #324725) |
 | python         | (:background #142b3e) |
 | jupyter-python | (:background #371703) |
+|                |                       |
+** WAIT use =rainbow-mode= to colorize color names
 
-** use =rainbow-mode= to colorize color names
+# Turn it on automatically in most programming modes.
 
-Turn it on automatically in most programming modes.
+# #+BEGIN_SRC emacs-lisp
+#   (add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
 
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
+# #+END_SRC
 
-#+END_SRC
-
-#+RESULTS:
-| rainbow-identifiers-mode | hl-todo-mode | display-line-numbers-mode | highlight-numbers-mode | vi-tilde-fringe-mode |
+# #+RESULTS:
+# | rainbow-identifiers-mode | hl-todo-mode | display-line-numbers-mode | highlight-numbers-mode | vi-tilde-fringe-mode |
 
 * dap-mode and dab-python (debugger)
 - Documentation for dap-python:
@@ -257,15 +173,6 @@ recommended. See [[*Configuration][Configuration]].
 (after! dap-mode
   (setq dap-python-debugger 'debugpy))
 #+end_src
-* TODO org-export - check if still necessary (it's in =packages.el=)
-I want to add the twitter bootstrap export to the org export dialogue
-
-
-#+begin_src emacs-lisp
-  (use-package! ox-twbs
-    :after ox)
-#+end_src
-
 * org-todo
 
 I want to customize the doom emacs built-in TODO keywords. Specifically, for me
@@ -334,8 +241,13 @@ http://doc.endlessparentheses.com/Fun/format-time-stringhttp://doc.endlessparent
 I want the total time in the duration variable be given in hours and minutes
 (not days and hours)
 #+begin_src emacs-lisp
-(setq org-duration-format 'h:mm)
+(after! org
+  (setq org-duration-format 'h:mm))
 #+end_src
+
+#+RESULTS:
+: h:mm
+
 * Zetteldeft
 #+begin_src emacs-lisp :results silent
 (after! deft
@@ -491,8 +403,13 @@ Lastly, we want the inserted links with the form
   (defun zotero-open (zotero-link)
     (start-process "zotero_open" nil "open" (concat "zotero:" zotero-link)))
 
-  (org-link-set-parameters "zotero" :follow #'zotero-open)
+  (after! ol
+    (org-link-set-parameters "zotero" :follow #'zotero-open))
+
 #+end_src
+
+#+RESULTS:
+| :follow | zotero-open | :export | org-zotxt--link-export |
 
 * fine-tuning =init.el= - rainbow mode
 

@@ -6,3 +6,4 @@ dependencies:
   - r::r-base
   - r::r-essentials
   - r::r-tidyverse
+  - r::r-brucer  # PROCESS, etc
