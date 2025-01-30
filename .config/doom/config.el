@@ -1,15 +1,32 @@
 (setq initial-major-mode 'org-mode)
 
-(pdf-tools-install)
-
 (map! :leader
       (:prefix-map ("t" . "toggle")
        :desc "org-indent-mode"        "C-i"   #'org-indent-mode))
+
+(map! :map my-evil-org-mode-map
+      :m "]n"  #'org-next-visible-heading
+      :m "[n"  #'org-previous-visible-heading
+      :m "]j"  #'org-journal-next-entry
+      :m "[j"  #'org-journal-previous-entry
+      )
+
+(map! :after doc-view
+      :map doc-view-mode-map
+      :nmv "C-d" #'doc-view-scroll-down-or-previous-page
+      :nmv "C-u" #'doc-view-scroll-up-or-next-page)
+(after! doc-view
+  (setq doc-view-continuous t))
 
 (setq org-directory "~/org")
 
 (after! org
   (setq org-ellipsis "↴"))
+
+(defun display-ansi-colors ()
+  (ansi-color-apply-on-region (point-min) (point-max)))
+
+(add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
 
 (setq org-src-block-faces '(("emacs-lisp" (:background "#482652"))
                             ("sh" (:background "#223814"))
@@ -18,6 +35,8 @@
                             ("jupyter-python" (:background "#371703"))
                             ;; ("jupyter-python" (:background "#FFFFFF"))
                             ))
+
+(add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
 
 (after! dap-mode
   (setq dap-python-debugger 'debugpy))
@@ -52,6 +71,8 @@
 (setq org-agenda-files
       (append
        (directory-files-recursively "~/org/projects/" ".org$")
+       (directory-files-recursively "~/org/journal/" "[0-9]+$")
+       (directory-files-recursively "~/org/00_roam2/" ".org$")
        '("~org/index.org"
          "~org/recurring-events.org")))
 
@@ -60,8 +81,75 @@
   (setq org-journal-file-type `monthly)
   (setq org-journal-date-format "%A, %d %B %Y"))
 
+(map!
+ (:map calendar-mode-map
+   :n "o" #'org-journal-display-entry
+   :n "p" #'org-journal-previous-entry
+   :n "n" #'org-journal-next-entry
+   :n "O" #'org-journal-new-date-entry))
+
 (after! org
   (setq org-duration-format 'h:mm))
+
+(setq org-roam-directory (file-truename "~/org/00_roam2"))
+
+(org-roam-db-autosync-mode)
+
+(setq org-roam-mode-sections
+      (list #'org-roam-backlinks-section
+            #'org-roam-reflinks-section
+            #'org-roam-unlinked-references-section
+            ))
+
+(add-to-list 'display-buffer-alist
+             '("\\*org-roam\\*"
+               (display-buffer-in-direction)
+               (direction . right)
+               (window-width . 0.33)
+               (window-height . fit-window-to-buffer)))
+
+(use-package! org-transclusion
+  :after org
+  :init
+  (map!
+   :map org-transclusion-map
+   :leader
+   (:prefix ("n" . "notes")
+            (:prefix ("i" . "transclusion")
+                     :desc "add transcluded text at point" :nvme "a" #'org-transclusion-add
+                     :desc "add all active transclusions in buffer" :nvme "A" #'org-transclusion-add-all
+                     :desc "make transclusion from link at point" :nvme "l" #'org-transclusion-make-from-link
+                     :desc "remove transcluded text at point" :nvme "r" #'org-transclusion-remove
+                     :desc "remove all transcluded text in buffer" :nvme "R" #'org-transclusion-remove-all
+                     :desc "open source of transclusion at point" :nvme "o" #'org-transclusion-open-source
+                     :desc "move to source of transclusion at point" :nvme "O" #'org-transclusion-move-to-source
+                     :desc "Org Transclusion Mode" :nvme "t" #'org-transclusion-mode
+                     :desc "activate transclusion setup in buffer" :nvme "C-a" #'org-transclusion-activate
+                     :desc "deactivate transclusion setup in buffer" :nvme "C-d" #'org-transclusion-deactivate
+                     :desc "demote transcluded subtree at point" :nvme "C-h" #'org-transclusion-demote-subtree
+                     :desc "promote transcluded subtree at point" :nvme "C-l" #'org-transclusion-promote-subtree
+                     :desc "exit live-sync edit at point" :nvme "C-e" #'org-transclusion-live-sync-exit
+                     :desc "start live-sync edit at point" :nvme "C-s" #'org-transclusion-live-sync-start
+                     :desc "paste to live-sync edit " :nvme "C-p" #'org-transclusion-live-sync-paste
+                     )
+            )
+   )
+  )
+
+(defun my/org-ctrl-c-ctrl-c ()
+  (interactive)
+  (setq inhibit-read-only t)
+  (org-ctrl-c-ctrl-c)
+  (setq inhibit-read-only nil))
+
+(map!
+ :after org
+ :map org-mode-map
+ "C-c C-c" #'my/org-ctrl-c-ctrl-c
+ )
+
+(use-package! ox-twbs
+  :after ox)
 
 (after! deft
   (setq deft-default-extension "org")

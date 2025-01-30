@@ -7,9 +7,9 @@ I'd like the initial scratch buffer to be in Org:
 
 
 Check that =pdf-tools= is installed (otherwise this has to be done manually)
-#+begin_src emacs-lisp
-  (pdf-tools-install)
-#+end_src
+# #+begin_src emacs-lisp
+#   (pdf-tools-install)
+# #+end_src
 ** KILL remove $HOME .git from =projectile=
 CLOSED: [2024-02-24 Sa 14:55]
 # Emacs will assume $HOME is the root of any project living under $HOME. If this
@@ -38,6 +38,36 @@ add toggling the =org-indent-mode= to the toggle localleader
          :desc "org-indent-mode"        "C-i"   #'org-indent-mode))
 #+end_src
 
+#+RESULTS:
+: org-indent-mode
+
+personalize org-mode keybindings
+#+begin_src emacs-lisp
+(map! :map my-evil-org-mode-map
+      :m "]n"  #'org-next-visible-heading
+      :m "[n"  #'org-previous-visible-heading
+      :m "]j"  #'org-journal-next-entry
+      :m "[j"  #'org-journal-previous-entry
+      )
+
+#+end_src
+
+#+RESULTS:
+
+** =doc-view=
+#+begin_src emacs-lisp
+(map! :after doc-view
+      :map doc-view-mode-map
+      :nmv "C-d" #'doc-view-scroll-down-or-previous-page
+      :nmv "C-u" #'doc-view-scroll-up-or-next-page)
+(after! doc-view
+  (setq doc-view-continuous t))
+#+end_src
+
+#+RESULTS:
+
+
+
 * Org-mode
 set the =org-directory=
 #+BEGIN_SRC emacs-lisp
@@ -53,6 +83,28 @@ I like seeing a little downward-pointing arrow instead of the usual ellipsis
 #+end_src
 
 * org-babel
+** display ansi colors correctly
+
+Unfortunately, there is a bug with displaying ansi colors correctly:
+https://github.com/nnicandro/emacs-jupyter/issues/366
+
+The following hook should take care of that:
+
+#+BEGIN_SRC emacs-lisp
+  (defun display-ansi-colors ()
+    (ansi-color-apply-on-region (point-min) (point-max)))
+
+  (add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
+#+END_SRC
+
+#+RESULTS:
+| display-ansi-colors | +org-redisplay-inline-images-in-babel-result-h |
+
+# #+begin_src emacs-lisp
+#   (setq jupyter-use-zmq nil)
+# #+end_src
+
+# #+RESULTS:
 ** WAIT setup =ob-tmux= and helper functions
 
 # #+BEGIN_SRC emacs-lisp
@@ -150,17 +202,17 @@ edited using [[https://htmlcolorcodes.com/color-picker/][this tool]].
 | python         | (:background #142b3e) |
 | jupyter-python | (:background #371703) |
 |                |                       |
-** WAIT use =rainbow-mode= to colorize color names
+** use =rainbow-identifiers-mode= to color variables by hash
 
-# Turn it on automatically in most programming modes.
+Turn it on automatically in most programming modes.
 
-# #+BEGIN_SRC emacs-lisp
-#   (add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
 
-# #+END_SRC
+#+END_SRC
 
-# #+RESULTS:
-# | rainbow-identifiers-mode | hl-todo-mode | display-line-numbers-mode | highlight-numbers-mode | vi-tilde-fringe-mode |
+#+RESULTS:
+| rainbow-identifiers-mode | hl-todo-mode | +corfu-add-cape-file-h | display-line-numbers-mode | highlight-numbers-mode | vi-tilde-fringe-mode |
 
 * dap-mode and dab-python (debugger)
 - Documentation for dap-python:
@@ -217,12 +269,14 @@ Customize which files belong in the agenda:
   (setq org-agenda-files
         (append
          (directory-files-recursively "~/org/projects/" ".org$")
+         (directory-files-recursively "~/org/journal/" "[0-9]+$")
+         (directory-files-recursively "~/org/00_roam2/" ".org$")
          '("~org/index.org"
            "~org/recurring-events.org")))
 #+end_src
 
 #+RESULTS:
-| ~/org/projects/eggeling.org | ~/org/projects/life.org | ~/org/projects/medinetz-jena.org | ~/org/projects/rls-kritmint.org | ~org/index.org | ~org/recurring-events.org |
+| ~/org/projects/blog-ideas.org | ~/org/projects/dim-forschung.org | ~/org/projects/dim-lehre.org | ~/org/projects/dim-technik.org | ~/org/projects/dim-verwaltung-technik.org | ~/org/projects/divmed.org | ~/org/projects/eggeling.org | ~/org/projects/life.org | ~/org/projects/medinetz-jena.org | ~/org/projects/music-ideas.org | ~/org/projects/reading-list.org | ~/org/projects/rls-kritmint.org | ~/org/projects/sgz-quer.org | ~/org/journal/20230801 | ~/org/journal/20230901 | ~/org/journal/20231001 | ~/org/journal/20231101 | ~/org/journal/20231201 | ~/org/journal/20240101 | ~/org/journal/20240201 | ~/org/journal/20240301 | ~/org/journal/20240401 | ~/org/journal/20240501 | ~/org/journal/20240601 | ~/org/journal/20240701 | ~/org/journal/20240801 | ~/org/journal/20240901 | ~/org/journal/20241001 | ~/org/journal/20241101 | ~/org/journal/20241201 | ~/org/journal/20241202 | ~/org/journal/20250101 | ~/org/00_roam2/daily/2025-01-11.org | ~/org/00_roam2/20241231155159-init.org | ~/org/00_roam2/20250109134019-anova.org | ~/org/00_roam2/20250109134049-statistical_tests.org | ~/org/00_roam2/20250109142817-maths_and_statistics.org | ~/org/00_roam2/20250109145642-statistics_t_test.org | ~/org/00_roam2/20250109150110-wilcoxon_test.org | ~/org/00_roam2/20250109150226-chi_square.org | ~/org/00_roam2/20250109150249-binomial_test.org | ~/org/00_roam2/20250109150359-mann_whitney_test.org | ~/org/00_roam2/20250109150428-fishers_test.org | ~/org/00_roam2/20250109150542-log_rank_test.org | ~/org/00_roam2/20250109150600-mantel_haenszel_test.org | ~/org/00_roam2/20250109150706-mcnemars_test.org | ~/org/00_roam2/20250109150748-hazard_regression.org | ~/org/00_roam2/20250109150958-tukey_kramer_test.org | ~/org/00_roam2/20250109151058-bartletts_test.org | ~/org/00_roam2/20250109151143-kruskal_wallis_test.org | ~/org/00_roam2/20250109151600-friedman_test.org | ~/org/00_roam2/20250109151637-cochrane_s_q_test.org | ~/org/00_roam2/20250109151759-pearson_correlation.org | ~/org/00_roam2/20250109151858-spearman_correlation.org | ~/org/00_roam2/20250109152008-contingency_coefficients.org | ~/org/00_roam2/20250109152040-linear_regression.org | ~/org/00_roam2/20250109152157-nonlinear_regression.org | ~/org/00_roam2/20250109152220-nonparametric_regression.org | ~/org/00_roam2/20250109152258-logistic_regression.org | ~/org/00_roam2/20250109152836-maihda_analysis.org | ~/org/00_roam2/20250109153050-intersectional_research_methods.org | ~/org/00_roam2/20250109153143-progress_plus_framework.org | ~/org/00_roam2/20250109153243-diversity_medicine.org | ~/org/00_roam2/20250109153318-intersectionality.org | ~/org/00_roam2/20250109153920-german_diabetes_risk_score.org | ~/org/00_roam2/20250109154122-diabetes_mellitus.org | ~/org/00_roam2/20250109154150-internal_medicine.org | ~/org/00_roam2/20250109154231-medical_sciences.org | ~org/index.org | ~org/recurring-events.org |
 
 * org-journal
 
@@ -237,6 +291,20 @@ http://doc.endlessparentheses.com/Fun/format-time-stringhttp://doc.endlessparent
     (setq org-journal-date-format "%A, %d %B %Y"))
 #+end_src
 
+also add some custom keybindings for org-journal functions to calendar mode
+
+#+begin_src emacs-lisp
+(map!
+ (:map calendar-mode-map
+   :n "o" #'org-journal-display-entry
+   :n "p" #'org-journal-previous-entry
+   :n "n" #'org-journal-next-entry
+   :n "O" #'org-journal-new-date-entry))
+
+#+end_src
+
+#+RESULTS:
+
 * org-clock
 I want the total time in the duration variable be given in hours and minutes
 (not days and hours)
@@ -248,6 +316,121 @@ I want the total time in the duration variable be given in hours and minutes
 #+RESULTS:
 : h:mm
 
+* org-roam
+Here is the official documentation:
+https://github.com/org-roam/org-roam/blob/main/doc/org-roam.org
+
+First, setup the org-roam directory
+
+#+begin_src emacs-lisp
+(setq org-roam-directory (file-truename "~/org/00_roam2"))
+#+end_src
+
+#+RESULTS:
+: /home/lea/org/00_roam2
+
+Next, we setup Org-roam to run functions on file changes to maintain cache
+consistency. This is achieved by running M-x org-roam-db-autosync-mode. To
+ensure that Org-roam is available on startup, place this in your Emacs
+configuration:
+
+#+begin_src emacs-lisp
+(org-roam-db-autosync-mode)
+#+end_src
+
+The following customizes the org roam buffer, a window on the right which shows
+relationships with other notes. For configuration, there are currently 3
+provided widget types:
+
+- Backlinks: View (preview of) nodes that link to this node
+- Reference Links: Nodes that reference this node (see Refs)
+- Unlinked references: View nodes that contain text that match the nodes
+  title/alias but are not linked
+
+I want them all
+
+#+begin_src emacs-lisp
+(setq org-roam-mode-sections
+      (list #'org-roam-backlinks-section
+            #'org-roam-reflinks-section
+            #'org-roam-unlinked-references-section
+            ))
+#+end_src
+
+Also, the author's recommended display configuration:
+
+#+begin_src emacs-lisp
+(add-to-list 'display-buffer-alist
+             '("\\*org-roam\\*"
+               (display-buffer-in-direction)
+               (direction . right)
+               (window-width . 0.33)
+               (window-height . fit-window-to-buffer)))
+#+end_src
+
+* org-transclusion
+#+begin_src emacs-lisp
+(use-package! org-transclusion
+  :after org
+  :init
+  (map!
+   :map org-transclusion-map
+   :leader
+   (:prefix ("n" . "notes")
+            (:prefix ("i" . "transclusion")
+                     :desc "add transcluded text at point" :nvme "a" #'org-transclusion-add
+                     :desc "add all active transclusions in buffer" :nvme "A" #'org-transclusion-add-all
+                     :desc "make transclusion from link at point" :nvme "l" #'org-transclusion-make-from-link
+                     :desc "remove transcluded text at point" :nvme "r" #'org-transclusion-remove
+                     :desc "remove all transcluded text in buffer" :nvme "R" #'org-transclusion-remove-all
+                     :desc "open source of transclusion at point" :nvme "o" #'org-transclusion-open-source
+                     :desc "move to source of transclusion at point" :nvme "O" #'org-transclusion-move-to-source
+                     :desc "Org Transclusion Mode" :nvme "t" #'org-transclusion-mode
+                     :desc "activate transclusion setup in buffer" :nvme "C-a" #'org-transclusion-activate
+                     :desc "deactivate transclusion setup in buffer" :nvme "C-d" #'org-transclusion-deactivate
+                     :desc "demote transcluded subtree at point" :nvme "C-h" #'org-transclusion-demote-subtree
+                     :desc "promote transcluded subtree at point" :nvme "C-l" #'org-transclusion-promote-subtree
+                     :desc "exit live-sync edit at point" :nvme "C-e" #'org-transclusion-live-sync-exit
+                     :desc "start live-sync edit at point" :nvme "C-s" #'org-transclusion-live-sync-start
+                     :desc "paste to live-sync edit " :nvme "C-p" #'org-transclusion-live-sync-paste
+                     )
+            )
+   )
+  )
+
+#+end_src
+
+#+RESULTS:
+: org-transclusion
+
+one problem that arises with transcluded =emacs-jupyter= source blocks is that
+=org-ctrl-c-ctrl-c= fails with the message "Text is read only!". In [[https:github.com/nobiot/org-transclusion/issues/86][this issue]]
+they discussed a workaround
+
+#+begin_src emacs-lisp
+(defun my/org-ctrl-c-ctrl-c ()
+  (interactive)
+  (setq inhibit-read-only t)
+  (org-ctrl-c-ctrl-c)
+  (setq inhibit-read-only nil))
+
+(map!
+ :after org
+ :map org-mode-map
+ "C-c C-c" #'my/org-ctrl-c-ctrl-c
+ )
+
+#+end_src
+
+
+* TODO org-export - check if still necessary (it's in =packages.el=)
+I want to add the twitter bootstrap export to the org export dialogue
+
+
+#+begin_src emacs-lisp
+(use-package! ox-twbs
+  :after ox)
+#+end_src
 * Zetteldeft
 #+begin_src emacs-lisp :results silent
 (after! deft
