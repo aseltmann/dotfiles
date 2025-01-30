@@ -1,9 +1,29 @@
 name: r-base
 channels:
+  - r
+  - conda-forge
   - defaults
 dependencies:
-  - r::r-irkernel
-  - r::r-base
-  - r::r-essentials
-  - r::r-tidyverse
+  - conda-forge::r-irkernel
+  - conda-forge::r-base
+  - conda-forge::r-essentials
+  - conda-forge::r-tidyverse
   - r::r-brucer  # PROCESS, etc
+  - conda-forge::r-arrow  # read_parquet
+  - conda-forge::r-psych  # describe, describeBy, etc
+  - conda-forge::r-gmodels  # CrossTable, etc
+  - conda-forge::r-gtsummary  # summary_table etc
+  - conda-forge::r-cardx  # needed for gtsummary::add_p
+  - conda-forge::r-diagrammer  # mermaid and graphviz diagrams
+  - conda-forge::r-diagrammersvg  # for diagrammer exporting
+  - conda-forge::r-rsvg  # for diagrammer exporting
+  - conda-forge::r-remotes  # for using install_github()
+  - conda-forge::r-broom.helpers  # gtsummary regression tables
+  - conda-forge::r-broom.mixed  # gtsummary regression tables
+  - conda-forge::r-emmeans  # follow-up nach regression interaktion
+  - r::r-clusrank  # wilcoxon tests for clustered data
+  - conda-forge::r-aods3  # drs donner chi-sq for clustered binomal data
+  - conda-forge::r-survival>=3.8  # survival analysis, >=3.8 for ggsurvfit
+  - conda-forge::r-ggsurvfit  # survival analysis
+  # build first locally from cran
+  - local::r-htestclust  # https://journal.r-project.org/articles/RJ-2022-024/
