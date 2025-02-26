@@ -12,6 +12,7 @@ dependencies:
   - conda-forge::r-arrow  # read_parquet
   - conda-forge::r-psych  # describe, describeBy, etc
   - conda-forge::r-gmodels  # CrossTable, etc
+  - conda-forge::r-lme4>=1.1-35.5  # lme, >= needed for gtsummary
   - conda-forge::r-gtsummary  # summary_table etc
   - conda-forge::r-cardx  # needed for gtsummary::add_p
   - conda-forge::r-diagrammer  # mermaid and graphviz diagrams
@@ -25,5 +26,16 @@ dependencies:
   - conda-forge::r-aods3  # drs donner chi-sq for clustered binomal data
   - conda-forge::r-survival>=3.8  # survival analysis, >=3.8 for ggsurvfit
   - conda-forge::r-ggsurvfit  # survival analysis
+  - conda-forge::r-cairo  # R graphics library, needed by plot.fixef.allFit
+  - conda-forge::r-ggtext  # rendering plot labels, needed by plot.fixef.allFit
+  - conda-forge::r-optimx  # more optimizers for lme4::allFit
+  - conda-forge::r-dfoptim  # more optimizers for lme4::allFit
+  - conda-forge::r-mice  # imputation for missing values
+  - conda-forge::r-blme  # baysian linear mixed effects models (if complete sep)
+  - conda-forge::r-glmnet  # lasso, ridge, elasticnet logistic regression
+  - conda-forge::r-officer  # access and manipulate ms word, powerpoint
+  - conda-forge::r-kableextra  # html or latex tables
+  - conda-forge::r-survminer  # survival curves and cox regression tools
   # build first locally from cran
   - local::r-htestclust  # https://journal.r-project.org/articles/RJ-2022-024/
+  - local::r-tidystats  # getting tidy statistics from afex::mixed
