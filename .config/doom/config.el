@@ -31,8 +31,9 @@
 (setq org-src-block-faces '(("emacs-lisp" (:background "#482652"))
                             ("sh" (:background "#223814"))
                             ("tmux" (:background "#324725"))
-                            ("python" (:background "#142b3e"))
+                            ("python" (:background "#611d1d"))
                             ("jupyter-python" (:background "#371703"))
+                            ("jupyter-R" (:background "#281b69"))
                             ;; ("jupyter-python" (:background "#FFFFFF"))
                             ))
 
