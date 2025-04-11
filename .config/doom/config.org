@@ -67,6 +67,16 @@ personalize org-mode keybindings
 #+RESULTS:
 
 
+** =snake=
+#+begin_src emacs-lisp
+(map! :after snake
+      :map snake-mode-map
+      :nmv "n" #'snake-start-game
+      :nmv "j" #'snake-move-down
+      :nmv "k" #'snake-move-up
+      :nmv "h" #'snake-move-left
+      :nmv "l" #'snake-move-right)
+#+end_src
 
 * Org-mode
 set the =org-directory=
@@ -432,6 +442,7 @@ I want to add the twitter bootstrap export to the org export dialogue
 (use-package! ox-twbs
   :after ox)
 #+end_src
+
 * Zetteldeft
 #+begin_src emacs-lisp :results silent
 (after! deft

@@ -8,5 +8,6 @@
     "height": 720
   },
   "SKIP_HOST_UPDATE": true,
-  "chromiumSwitches": {}
+  "chromiumSwitches": {},
+  "BACKGROUND_COLOR": "#121214"
 }

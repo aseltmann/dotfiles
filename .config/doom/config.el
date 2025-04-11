@@ -18,6 +18,14 @@
 (after! doc-view
   (setq doc-view-continuous t))
 
+(map! :after snake
+      :map snake-mode-map
+      :nmv "n" #'snake-start-game
+      :nmv "j" #'snake-move-down
+      :nmv "k" #'snake-move-up
+      :nmv "h" #'snake-move-left
+      :nmv "l" #'snake-move-right)
+
 (setq org-directory "~/org")
 
 (after! org

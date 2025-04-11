@@ -21,12 +21,16 @@
        ;;layout            ; auie,ctsrnm is the superior home row
 
        :completion
-       ;;company           ; the ultimate code completion backend
-       ;;(corfu +orderless)  ; complete with cap(f), cape and a flying feather!
+       company           ; the ultimate code completion backend
+       (corfu              ; complete with cap(f), cape and a flying feather!
+        +orderless
+        +icons
+        +dabbrev)          ; complete word from current buffer
        ;;helm              ; the *other* search engine for love and life
        ;;ido               ; the other *other* search engine...
        ;;ivy               ; a search engine for love and life
-       vertico             ; the search engine of the future
+       (vertico             ; the search engine of the future
+        +icons)
 
        :ui
        deft                ; notational velocity for Emacs
@@ -46,8 +50,7 @@
        (popup              ; tame sudden yet inevitable temporary windows
         +defaults)
        ;;tabs              ; a tab bar for Emacs
-       (treemacs           ; a project drawer, like neotree but cooler
-        +lsp)
+       treemacs           ; a project drawer, like neotree but cooler
        ;;unicode           ; extended unicode support for various languages
        (vc-gutter          ; vcs diff in the fringe
         +pretty)
@@ -104,7 +107,8 @@
        (eval               ; run code, run (also, repls)
         +overlay)
        lookup              ; navigate your code and its documentation
-       ;;lsp               ; M-x vscode
+       (lsp               ; M-x vscode
+        +eglot)
        magit               ; a git porcelain for Emacs
        ;;make              ; run make tasks from Emacs
        ;;pass              ; password manager for nerds
@@ -136,7 +140,8 @@
        emacs-lisp          ; drown in parentheses
        ;;erlang            ; an elegant language for a more civilized age
        (ess                ; emacs speaks statistics
-        +tree-sitter)
+        +tree-sitter
+        +stan)
        ;;factor
        ;;faust             ; dsp, but you get to keep your soul
        ;;fortran           ; in FORTRAN, GOD is REAL (unless declared INTEGER)
@@ -154,9 +159,10 @@
        ;;julia             ; a better, faster MATLAB
        ;;kotlin            ; a better, slicker Java(Script)
        (latex              ; writing papers in Emacs has never been so fun
-        +cdlatex           ; fast math insertion
         +latexmk
-        +fold)
+        +cdlatex           ; fast math insertion
+        +fold
+        +lsp)
        ;;lean              ; for folks with too much to prove
        ledger              ; be audit you can be
        ;;lua               ; one-based indices? one-based indices
@@ -167,13 +173,14 @@
        ;;ocaml             ; an objective camel
        (org                ; organize your plain life in plain text
         +dragndrop
+        +journal           ; org-journal
         +jupyter           ; emacs-jupyter integration for babel
         +hugo              ; export from Emacs well-formed blackfriday md to hugo
-        +journal           ; org-journal
-        +pretty
+        +pandoc            ; enable pandoc integration into org exporter
         +pomodoro
-        +roam2
-        +present)          ; reveal.js, beamer and org-tree-slide, so Emacs can be used for presentations.
+        +present           ; reveal.js, beamer and org-tree-slide, so Emacs can be used for presentations.
+        +pretty
+        +roam2)
        ;;php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more
        ;;graphviz          ; diagrams for confusing yourself even more
@@ -181,9 +188,9 @@
        (python             ; beautiful is better than ugly
         +conda
         +cython
-        +tree-sitter       ; better syntax highlighting and structural text editing.
-        ;; +lsp            ; langserver (supports mspyls, pyls, and pyright).
-        +pyright)          ; Use the pyright LSP server instead of mspyls or pyls
+        +lsp               ; langserver (supports mspyls, pyls, and pyright).
+        +pyright           ; Use the pyright LSP server instead of mspyls or pyls
+        +tree-sitter)      ; better syntax highlighting and structural text editing.
        ;;qt                ; the 'cutest' gui framework ever
        ;;racket            ; a DSL for DSLs
        ;;raku              ; the artist formerly known as perl6
@@ -194,14 +201,19 @@
        ;;scala             ; java, but good
        ;;(scheme +guile)   ; a fully conniving family of lisps
        (sh                 ; she sells {ba,z,fi}sh shells on the C xor
+        +fish
+        +lsp
+        +powershell
         +tree-sitter)
        ;;sml
        ;;solidity          ; do you need a blockchain? No.
        ;;swift             ; who asked for emoji variables?
        ;;terra             ; Earth and Moon in alignment for performance.
        (web                ; the tubes
+        +lsp
         +tree-sitter)
        (yaml               ; JSON, but readable
+        +lsp
         +tree-sitter)
        ;;zig               ; C, but simpler
 
