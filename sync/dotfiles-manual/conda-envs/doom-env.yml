@@ -2,22 +2,14 @@ name: doom
 channels:
   - defaults
 dependencies:
-  - jupyter
-  - nb_conda_kernels  # only needed if jupyter is started from this environment
-  # , it detects kernels from other envs
-  - conda-forge::grip
+  - conda-forge::grip  # for grip-mode in markdown
   - conda-forge::black
   - conda-forge::pyflakes
-  - conda-forge::isort
+  - conda-forge::isort  # import sorting for python
   - conda-forge::pipenv
-  - conda-forge::nose
-  - conda-forge::pytest
-  - conda-forge::cython
-  - conda-forge::r-languageserver
-  - matplotlib
-  - numpy
-  - pandas
-  - scikit-image
-  - scikit-learn
-  - scipy
-  - seaborn
+  - conda-forge::nose  # running tests through nose
+  - conda-forge::pytest  # running tests through pytest
+  - conda-forge::cython  # for cython file support with cython-mode
+  - conda-forge::r-languageserver  # R linting and formatting
+  - conda-forge::jsbeautifier  # for Code formatting in JS/CSS/HTML modes
+  - conda-forge::jupyterlab  # for org +jupyter flag to work

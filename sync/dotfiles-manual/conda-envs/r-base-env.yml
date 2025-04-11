@@ -36,6 +36,8 @@ dependencies:
   - conda-forge::r-officer  # access and manipulate ms word, powerpoint
   - conda-forge::r-kableextra  # html or latex tables
   - conda-forge::r-survminer  # survival curves and cox regression tools
+  - conda-forge::r-ggdist  # for plotting e.g. raincloud plots
   # build first locally from cran
   - local::r-htestclust  # https://journal.r-project.org/articles/RJ-2022-024/
   - local::r-tidystats  # getting tidy statistics from afex::mixed
+  - local::r-ggrain  # raincloud plots
