@@ -31,11 +31,6 @@
 (after! org
   (setq org-ellipsis "↴"))
 
-(defun display-ansi-colors ()
-  (ansi-color-apply-on-region (point-min) (point-max)))
-
-(add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
-
 (setq org-src-block-faces '(("emacs-lisp" (:background "#482652"))
                             ("sh" (:background "#223814"))
                             ("tmux" (:background "#324725"))

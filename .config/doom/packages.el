@@ -47,16 +47,13 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;; (unpin! t)
 
-(package! zetteldeft)
-(package! rainbow-identifiers)
-(package! zotxt)
 ;; (unpin! org)
+(package! flymake-ruff)
+(package! jupyter
+  :pin "fcb9c7e")
 (package! ob-tmux)
-(package! ox-twbs)
 (package! org-transclusion)
-;; (package! zmq
-;;   :pin "4f31ffa3953db33c57b590c43013cd920c344142")
-;; (unpin! jupyter)
-;; (package! jupyter
-;;   :recipe (:branch "next")
-;;   )
+(package! ox-twbs)
+(package! rainbow-identifiers)
+(package! zetteldeft)
+(package! zotxt)

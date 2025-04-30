@@ -93,28 +93,6 @@ I like seeing a little downward-pointing arrow instead of the usual ellipsis
 #+end_src
 
 * org-babel
-** display ansi colors correctly
-
-Unfortunately, there is a bug with displaying ansi colors correctly:
-https://github.com/nnicandro/emacs-jupyter/issues/366
-
-The following hook should take care of that:
-
-#+BEGIN_SRC emacs-lisp
-  (defun display-ansi-colors ()
-    (ansi-color-apply-on-region (point-min) (point-max)))
-
-  (add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
-#+END_SRC
-
-#+RESULTS:
-| display-ansi-colors | +org-redisplay-inline-images-in-babel-result-h |
-
-# #+begin_src emacs-lisp
-#   (setq jupyter-use-zmq nil)
-# #+end_src
-
-# #+RESULTS:
 ** WAIT setup =ob-tmux= and helper functions
 
 # #+BEGIN_SRC emacs-lisp
